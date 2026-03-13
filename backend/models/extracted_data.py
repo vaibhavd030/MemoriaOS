@@ -18,6 +18,14 @@ from backend.models.wellness import (
     SleepEntry,
 )
 
+class PhotoAnalysis(BaseModel):
+    """Structured analysis of a Google Photo via Gemini Vision."""
+    timestamp: str
+    location: str | None = None
+    activity: str | None = None
+    objects: list[str] = Field(default_factory=list)
+    mood: str | None = None
+    inferred_context: str | None = None
 
 class ExtractedData(BaseModel):
     """Container for all data extracted from a single user message or image."""
@@ -39,6 +47,7 @@ class ExtractedData(BaseModel):
     recipe: RecipeCard | None = None
     expense: ExpenseRecord | None = None
     workout: WorkoutSplit | None = None
+    photos: list[PhotoAnalysis] = Field(default_factory=list)
 
     # General
     journal_note: str | None = None

@@ -1,0 +1,3 @@
+Identify missing or ambiguous information in the user's input 
+(e.g., missing metrics, unclear timestamps, ambiguous intent).
+Ask a concise, friendly question to fill the gap.

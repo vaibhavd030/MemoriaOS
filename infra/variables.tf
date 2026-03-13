@@ -14,3 +14,9 @@ variable "notion_api_key" {
   type        = string
   sensitive   = true
 }
+
+variable "google_api_key" {
+  description = "Google AI API Key"
+  type        = string
+  sensitive   = true
+}

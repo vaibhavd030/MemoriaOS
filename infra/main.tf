@@ -78,3 +78,84 @@ resource "google_storage_bucket" "media" {
     }
   }
 }
+
+# ── Artifact Registry ─────────────────────────────────────────────
+
+resource "google_artifact_registry_repository" "memoria_os" {
+  location      = var.region
+  repository_id = "memoria-os"
+  format        = "DOCKER"
+}
+
+# ── Secrets Manager ───────────────────────────────────────────────
+
+resource "google_secret_manager_secret" "google_api_key" {
+  secret_id = "GOOGLE_API_KEY"
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "google_api_key_v1" {
+  secret      = google_secret_manager_secret.google_api_key.id
+  secret_data = var.google_api_key
+}
+
+# ── Cloud Run Backend ─────────────────────────────────────────────
+
+resource "google_cloud_run_v2_service" "backend" {
+  name     = "memoria-os-backend"
+  location = var.region
+
+  template {
+    containers {
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/memoria-os/backend:latest"
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name = "GOOGLE_API_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.google_api_key.secret_id
+            version = "latest"
+          }
+        }
+      }
+    }
+  }
+}
+
+# ── Cloud Run Frontend ────────────────────────────────────────────
+
+resource "google_cloud_run_v2_service" "frontend" {
+  name     = "memoria-os-frontend"
+  location = var.region
+
+  template {
+    containers {
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/memoria-os/frontend:latest"
+      env {
+        name  = "NEXT_PUBLIC_API_URL"
+        value = google_cloud_run_v2_service.backend.uri
+      }
+    }
+  }
+}
+
+# ── Cloud Scheduler ───────────────────────────────────────────────
+
+resource "google_cloud_scheduler_job" "photo_enrichment" {
+  name             = "photo-enrichment-job"
+  description      = "Triggers Google Photos enrichment pipeline every night"
+  schedule         = "0 2 * * *"
+  time_zone        = "UTC"
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_v2_service.backend.uri}/api/enrich-photos"
+    body        = base64encode("{}")
+  }
+}

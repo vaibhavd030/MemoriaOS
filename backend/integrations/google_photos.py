@@ -32,5 +32,13 @@ class GooglePhotosClient:
         response.raise_for_status()
         return response.json().get("mediaItems", [])
 
+    async def download_media(self, base_url: str) -> bytes:
+        """Download media content from a baseUrl."""
+        # baseUrl=d allows downloading the actual data
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{base_url}=d")
+            response.raise_for_status()
+            return response.content
+
     async def close(self):
         await self.client.aclose()

@@ -9,7 +9,7 @@ from google.adk.agents import LlmAgent
 from backend.tools.extract_structured_data import extract_from_screenshot
 from backend.tools.sync_notion import sync_extraction_to_notion
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 ui_snipper_agent = LlmAgent(
     name="UISnipperAgent",

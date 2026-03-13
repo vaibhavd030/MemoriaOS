@@ -48,7 +48,7 @@ async def extract_from_screenshot(
         }
 
     response = await client.aio.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-2.5-flash",
         contents=[types.Content(role="user", parts=parts)],
         config=types.GenerateContentConfig(**generation_config),
     )

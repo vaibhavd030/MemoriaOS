@@ -106,5 +106,44 @@ _SYNC_CONFIGS = {
 
 async def sync_extraction_to_notion(data: Any) -> bool:
     """ADK Tool for syncing an extraction to Notion."""
-    # Logic to route to correct builder based on type of 'data'
-    return True
+    notion = _get_notion()
+    
+    try:
+        # Determine the type of data and find the matching config
+        config = None
+        data_item = None
+        
+        if isinstance(data, (list, tuple)) and len(data) > 0:
+            data_item = data[0]
+        else:
+            data_item = data
+            
+        if isinstance(data_item, RecipeCard):
+            config = _SYNC_CONFIGS["recipe"]
+        elif isinstance(data_item, ExpenseRecord):
+            config = _SYNC_CONFIGS["expense"]
+        elif isinstance(data_item, WorkoutSplit):
+            config = _SYNC_CONFIGS["workout"]
+        # Add more mappings as needed
+        
+        if not config:
+            log.warning("no_sync_config_found", type=type(data_item))
+            return False
+            
+        # Get the target page ID from settings
+        target_page_id = getattr(settings, config.page_id_attr, None)
+        if not target_page_id:
+            log.error("target_page_id_not_set", attr=config.page_id_attr)
+            return False
+            
+        # Build the blocks
+        blocks = await config.block_builder(data_item)
+        
+        # Append to Notion
+        await _append_blocks(notion, target_page_id, blocks)
+        log.info("sync_to_notion_success", type=type(data_item))
+        return True
+        
+    except Exception as e:
+        log.error("sync_to_notion_failed", error=str(e))
+        return False

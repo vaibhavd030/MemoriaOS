@@ -10,7 +10,7 @@ from backend.agents.reel_generator import reel_generator_agent
 from backend.agents.loop import loop_agent
 from backend.agents.query_agent import query_agent
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 supervisor_agent = LlmAgent(
     name="SupervisorAgent",

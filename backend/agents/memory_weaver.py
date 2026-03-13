@@ -1,36 +1,57 @@
-"""Agent for multimodal journaling and structured data extraction."""
+"""Sequential agent for weaving memories with ordered steps."""
 
 from google.adk.agents import LlmAgent
+from google.adk.agents.sequential_agent import SequentialAgent
 
+from backend.tools.query_bigquery import query_past_entries
 from backend.tools.generate_audio import generate_audio_summary
-from backend.tools.fetch_google_photos import fetch_and_analyze_recent_photos
+from backend.tools.sync_notion import sync_extraction_to_notion
+from backend.config.prompts import load_prompt
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
+IMAGE_MODEL = "gemini-2.5-flash-image-preview"
 
-memory_weaver_agent = LlmAgent(
-    name="MemoryWeaverAgent",
+# Step 1: Retrieve existing context
+context_retriever = LlmAgent(
+    name="ContextRetriever",
     model=GEMINI_MODEL,
-    instruction="""You are the MemoriaOS Storyteller. Your goal is to weave the user's
-input into a rich, structured memory.
+    instruction="""Retrieve relevant past context based on the user's current input.
+    Use the query_past_entries tool to look up similar memories or metrics.""",
+    tools=[query_past_entries],
+    output_key="past_context"
+)
 
-ROLES:
-1. NARRATOR: Transform the user's raw input (brain dumps, journal entries, feelings)
-   into a beautiful, reflective narrative.
-2. EXTRACTOR: Simultaneously extract any structured data (Sleep, Exercise, Tasks,
-   Links) into the appropriate models.
-3. CREATIVE: Generate a short, ambient audio description or mood summary that can
-   be turned into speech using generate_audio_summary.
-4. PHOTO ENRICHER: Use fetch_and_analyze_recent_photos to bring in contextual
-   visual memories if the journal mentions events that might have photos.
+# Step 2: Generate the reflective narrative (Interleaved text/image)
+narrative_generator = LlmAgent(
+    name="NarrativeGenerator",
+    model=IMAGE_MODEL,
+    instruction=load_prompt("memory_weaver"),
+    output_key="narrative_output"
+)
 
-PROMPT GUIDELINES:
-- Be empathetic and reflective.
-- ALWAYS extract structured data to BigQuery if metrics are mentioned.
-- Use tools to generate audio summaries of the day's highlights.
+# Step 3: Generate ambient audio summary
+audio_generator = LlmAgent(
+    name="AudioGenerator",
+    model=GEMINI_MODEL,
+    instruction="""Summarize the day's highlights into a short, ambient audio description.
+    Use the generate_audio_summary tool to synthesize this into an audio file.""",
+    tools=[generate_audio_summary],
+    output_key="audio_url"
+)
 
-OUTPUT:
-- A structured response containing both the human-friendly narrative and the
-  machine-friendly extracted segments.""",
-    description="Processes journals, extracts metrics, and generates narratives.",
-    tools=[generate_audio_summary, fetch_and_analyze_recent_photos],
+# Step 4: Persist the memory and extraction
+persister = LlmAgent(
+    name="Persister",
+    model=GEMINI_MODEL,
+    instruction="""Commit the final narrative, extraction data, and audio link to the 
+    user's vault. Use the sync_extraction_to_notion tool.""",
+    tools=[sync_extraction_to_notion],
+    output_key="persistence_confirmation"
+)
+
+# The Sequential Memory Weaver Agent
+memory_weaver_agent = SequentialAgent(
+    name="MemoryWeaverAgent",
+    sub_agents=[context_retriever, narrative_generator, audio_generator, persister],
+    description="Weaves memories sequentially: Retrieval -> Narrative -> Audio -> Persistence."
 )

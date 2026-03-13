@@ -3,7 +3,7 @@
 from google.adk.agents import LlmAgent
 from backend.tools.query_bigquery import query_past_entries
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
 query_agent = LlmAgent(
     name="QueryAgent",

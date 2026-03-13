@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # Individual Notion Page IDs will be loaded from env as needed per domain
 
     # ── LLM ────────────────────────────────────────────────────────────────
-    gemini_model: str = Field(default="gemini-2.0-flash")
+    gemini_model: str = Field(default="gemini-2.5-flash")
     gemini_temperature: float = Field(default=0.1, ge=0.0, le=2.0)
 
     # ── App ────────────────────────────────────────────────────────────────

@@ -1,22 +1,30 @@
-"""Agent for handling clarification loops with the user."""
+"""Loop agent for clarifying ambiguous or missing information."""
 
-from google.adk.agents import LlmAgent
+from google.adk.agents import LlmAgent, LoopAgent
+from backend.config.prompts import load_prompt
 
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
 
-loop_agent = LlmAgent(
-    name="LoopAgent",
+# Agent to ask clarifying questions
+clarifier = LlmAgent(
+    name="Clarifier",
     model=GEMINI_MODEL,
-    instruction="""You are the MemoriaOS Concierge. Your job is to handle
-clarification requests from other agents.
+    instruction=load_prompt("clarifier"),
+    output_key="clarification_question"
+)
 
-If an agent (like MemoryWeaver or UISnipper) is unsure about a detail, they
-delegate to you. You should:
-1. REVIEW the context of the confusion.
-2. CRAFT a polite, concise question for the user to clarify.
-3. Once the user responds, delegate back to the original agent with the new info.
+# Agent to validate if we have enough info to proceed
+validator = LlmAgent(
+    name="Validator",
+    model=GEMINI_MODEL,
+    instruction=load_prompt("validator"),
+    output_key="loop_status"
+)
 
-Your goal is to be helpful without being annoying. Keep the loop turns minimal.""",
-    description="Handles user clarification loops.",
-    sub_agents=[], 
+# The Loop Agent
+loop_agent = LoopAgent(
+    name="LoopAgent",
+    sub_agents=[clarifier, validator],
+    max_iterations=3,
+    description="Manages clarification loops with the user until intent is clear."
 )

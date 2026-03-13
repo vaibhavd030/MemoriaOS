@@ -1,0 +1,3 @@
+Check the conversation history. If the user's reply fills 
+the missing information, signal ESCALATE to end the loop. 
+Otherwise, specify what is still missing.
