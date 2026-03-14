@@ -57,6 +57,7 @@ graph TD
 
 ## 🚀 Key Features
 
+*   **Cinematic Narrative Reveal**: Server-Sent Events (SSE) stream text, mood images, and audio as they are generated for a "live thinking" effect.
 *   **Multimodal Journaling**: Interleaved text, AI-generated watercolours, and ambient audio summaries.
 *   **UI Navigation**: Take a screenshot of a recipe or receipt; MemoriaOS extracts it perfectly.
 *   **Memory Reels**: Weekly audiovisual summaries of your life highlights using FFmpeg and Gemini.
