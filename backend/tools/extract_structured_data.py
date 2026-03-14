@@ -28,11 +28,14 @@ async def extract_from_screenshot(
     based on the content type.
 
     Args:
-        image_base64: Base64 string of the screenshot (PNG).
-        schema_type: The content domain to target for extraction.
+        image_base64 (str): Base64 encoded PNG image data.
+        schema_type (Literal["recipe", "expense", "workout", "generic"]): The domain schema to use.
 
     Returns:
-        A dictionary representation of the extracted and validated data.
+        dict[str, Any]: A dictionary containing the extracted data, validated against the schema.
+
+    Raises:
+        ValueError: If the schema_type is invalid or extraction fails.
     """
     client = genai.Client()
     image_bytes = base64.b64decode(image_base64)

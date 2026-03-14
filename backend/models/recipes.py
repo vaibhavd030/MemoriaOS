@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Ingredient(BaseModel):
@@ -13,6 +13,8 @@ class Ingredient(BaseModel):
         quantity (str | None): Amount/quantity.
         notes (str | None): Preparation notes.
     """
+
+    model_config = ConfigDict(slots=True)
 
     name: str = Field(description="Ingredient name, e.g. 'chicken breast'")
     quantity: str | None = Field(
@@ -37,6 +39,8 @@ class RecipeCard(BaseModel):
         tags (list[str]): Metadata tags.
         source_url (str | None): Original source link.
     """
+
+    model_config = ConfigDict(slots=True)
 
     title: str
     description: str | None = None

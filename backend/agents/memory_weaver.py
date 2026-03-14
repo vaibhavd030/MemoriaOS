@@ -60,7 +60,8 @@ persister = LlmAgent(
     name="Persister",
     model=GEMINI_MODEL,
     instruction="""Commit the final narrative, extraction data, and audio link to the 
-    user's vault. Use the sync_extraction_to_notion tool.""",
+    user's vault. Use the sync_extraction_to_notion tool. 
+    IMPORTANT: Once the tool confirms success, explicitly include the string 'NOTION_SYNC_COMPLETE' in your response.""",
     tools=[sync_extraction_to_notion],
     output_key="persistence_confirmation",
     description="Handles long-term storage in Notion and other configured vaults.",

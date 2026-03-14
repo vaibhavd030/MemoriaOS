@@ -98,7 +98,7 @@ MemoriaOS is built with industrial-grade engineering practices:
 *   Python 3.11+
 *   Node.js 18+ (Next.js 14)
 *   **GCP Project**: Enable Vertex AI, BigQuery, GCS, TTS.
-*   **Notion**: Integration secret and Database IDs.
+*   **Notion**: Integration secret and Domain Page IDs (`NOTION_WELLNESS_PAGE_ID`, `NOTION_FINANCE_PAGE_ID`, etc.).
 
 ### 2. Quick Start (Local)
 ```bash

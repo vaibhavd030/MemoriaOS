@@ -158,14 +158,18 @@ async def chat_stream(
                             img_data = base64.b64encode(part.inline_data.data).decode()
                             yield f"event: image\ndata: {json.dumps({'content': img_data, 'mime_type': part.inline_data.mime_type})}\n\n"
 
-                # Check if this event contains tool outputs (like audio URL)
-                # Note: In ADK, tool outputs often appear in the conversation history or specific event fields
-                # We'll specifically look for .mp3 URLs in text as a fallback if not structured
+                # Check if this event contains tool outputs or manual signals
                 if event.content:
                     for part in event.content.parts:
-                        if part.text and (".mp3" in part.text or "https://storage.googleapis.com" in part.text):
-                            if "audio" in part.text.lower() or "reel" in part.text.lower():
+                        if part.text:
+                            # Audio detection
+                            if (".mp3" in part.text or "https://storage.googleapis.com" in part.text) and \
+                               ("audio" in part.text.lower() or "reel" in part.text.lower()):
                                 yield f"event: audio\ndata: {json.dumps({'url': part.text.strip()})}\n\n"
+                            
+                            # Notion sync detection (E5)
+                            if "NOTION_SYNC_COMPLETE" in part.text:
+                                yield f"event: notion_sync\ndata: {json.dumps({'status': 'success'})}\n\n"
 
             yield "event: done\ndata: {}\n\n"
 

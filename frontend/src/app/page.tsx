@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import AudioPlayer from "@/components/AudioPlayer";
 import WaveformVisualizer from "@/components/WaveformVisualizer";
 import { sendChatMessage, streamChatMessage, ChatResponsePart } from "@/lib/api";
+import Toast from "@/components/ui/Toast";
 
 export default function Home() {
   const [message, setMessage] = useState("");
@@ -18,6 +19,8 @@ export default function Home() {
   const [streamingReplies, setStreamingReplies] = useState<ChatResponsePart[]>([]);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+
+  const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" as const });
 
   const handleSend = async () => {
     if (!message && !selectedImage) return;
@@ -61,6 +64,13 @@ export default function Home() {
     source.addEventListener("audio", (e) => {
       const data = JSON.parse(e.data);
       setStreamingReplies(prev => [...prev, { type: "audio", content: data.url }]);
+    });
+
+    source.addEventListener("notion_sync", (e) => {
+      const data = JSON.parse(e.data);
+      if (data.status === "success") {
+        setToast({ isVisible: true, message: "Memory synced to Notion!", type: "success" });
+      }
     });
 
     source.addEventListener("done", () => {
@@ -245,6 +255,13 @@ export default function Home() {
         </div>
       </main>
       <Navigation />
+      
+      <Toast 
+        isVisible={toast.isVisible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
     </>
   );
 }

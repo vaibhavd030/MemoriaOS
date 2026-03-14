@@ -21,12 +21,15 @@ async def compile_reel_video(
     synced with the provided audio track.
 
     Args:
-        image_paths: List of absolute paths to local image files.
-        audio_path: Absolute path to the local audio file.
-        output_name: Desired filename for the resulting MP4.
+        image_paths (list[str]): List of absolute local file paths to images.
+        audio_path (str): Absolute local file path to the audio file.
+        output_name (str): The filename for the output video. Defaults to 'reel.mp4'.
 
     Returns:
-        The public GCS URL of the uploaded video, or an empty string on failure.
+        str: The public GCS URL of the uploaded video, or an empty string on failure.
+
+    Raises:
+        subprocess.CalledProcessError: If FFmpeg execution fails.
     """
     with tempfile.TemporaryDirectory() as tmp_dir_str:
         tmp_dir = Path(tmp_dir_str)

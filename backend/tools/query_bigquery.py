@@ -43,7 +43,18 @@ Today: {today}
 
 
 async def query_past_entries(question: str, user_id: str = "default") -> str:
-    """Query historical wellness data using natural language."""
+    """Query historical wellness data using natural language.
+
+    Uses Gemini to translate natural language into BigQuery SQL, executes the query,
+    and returns the results as a JSON string.
+
+    Args:
+        question (str): The natural language query from the user.
+        user_id (str): The user's ID for data filtering. Defaults to 'default'.
+
+    Returns:
+        str: JSON string of the query results or an error message.
+    """
     client = genai.Client()
     bq_client = bigquery.Client(project=settings.gcp_project_id)
 

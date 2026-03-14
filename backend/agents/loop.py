@@ -1,4 +1,8 @@
-"""Loop agent for clarifying ambiguous or missing information."""
+"""Loop agent for clarifying ambiguous or missing information.
+
+Manages a stateful conversation loop to ensure all necessary data for extraction
+is present before proceeding.
+"""
 
 from google.adk.agents import LlmAgent, LoopAgent
 

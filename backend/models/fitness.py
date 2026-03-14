@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkoutExercise(BaseModel):
@@ -18,6 +18,8 @@ class WorkoutExercise(BaseModel):
         duration_seconds (int | None): Duration if applicable.
         notes (str | None): Additional comments.
     """
+
+    model_config = ConfigDict(slots=True)
 
     name: str = Field(description="Exercise name, e.g. 'Bench Press'")
     sets: int | None = Field(default=None, ge=1)
@@ -38,6 +40,8 @@ class WorkoutSplit(BaseModel):
         difficulty (int | None): Difficulty score 1-5.
         source_url (str | None): Where it was found.
     """
+
+    model_config = ConfigDict(slots=True)
 
     title: str
     focus_areas: list[str] = Field(

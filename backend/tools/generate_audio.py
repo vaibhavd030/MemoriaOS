@@ -57,10 +57,13 @@ async def generate_audio_summary(
     Synthesizes speech from SSML templates and uploads the resulting MP3 to GCS.
 
     Args:
-        mood: The emotional tone to use for the synthesized speech.
+        mood (Literal["calm", "energetic", "peaceful", "warm"]): The emotional tone to use.
 
     Returns:
-        The public GCS URL of the generated audio file.
+        str: The public GCS URL of the generated audio file.
+
+    Raises:
+        google.api_core.exceptions.GoogleAPIError: If TTS synthesis or GCS upload fails.
     """
     config = MOOD_CONFIGS.get(mood, MOOD_CONFIGS["calm"])
 

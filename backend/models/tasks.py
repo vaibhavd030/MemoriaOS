@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TaskItem(BaseModel):
     """A to-do item or task to be saved."""
+
+    model_config = ConfigDict(slots=True)
 
     task: str = Field(description="The actual action item or task text")
     priority: Annotated[int, Field(ge=1, le=3)] | None = Field(
@@ -16,6 +18,8 @@ class TaskItem(BaseModel):
 
 class ReadingLink(BaseModel):
     """A web link to an article, video, or resource to read later."""
+
+    model_config = ConfigDict(slots=True)
 
     url: str = Field(
         description=(

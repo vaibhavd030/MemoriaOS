@@ -36,7 +36,13 @@ class Settings(BaseSettings):
     # ── Optional: Notion ──────────────────────────────────────────────────
     enable_notion: bool = Field(default=False)
     notion_api_key: SecretStr | None = Field(default=None)
-    # Individual Notion Page IDs will be loaded from env as needed per domain
+    
+    # Per-domain page IDs (G1 gap fix)
+    notion_wellness_page_id: str | None = Field(default=None)
+    notion_finance_page_id: str | None = Field(default=None)
+    notion_fitness_page_id: str | None = Field(default=None)
+    notion_recipes_page_id: str | None = Field(default=None)
+    notion_tasks_page_id: str | None = Field(default=None)
 
     # ── LLM ────────────────────────────────────────────────────────────────
     gemini_model: str = Field(default="gemini-2.5-flash")

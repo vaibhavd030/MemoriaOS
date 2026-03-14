@@ -17,12 +17,15 @@ async def upload_bytes(
     """Uploads arbitrary bytes to Google Cloud Storage.
 
     Args:
-        data: The raw byte content to upload.
-        filename: The destination path/name in the bucket.
-        content_type: The MIME type for the uploaded object.
+        data (bytes): The raw byte content to upload.
+        filename (str): The destination path/name in the bucket.
+        content_type (str): The MIME type for the uploaded object. Default is 'application/octet-stream'.
 
     Returns:
-        The public URL of the uploaded object, or an empty string on failure.
+        str: The public URL of the uploaded object, or an empty string on failure.
+
+    Raises:
+        google.api_core.exceptions.GoogleAPIError: If the upload to GCS fails.
     """
     if not settings.gcs_bucket_name:
         log.warning("gcs_bucket_not_configured")
@@ -45,10 +48,10 @@ async def list_files(prefix: str = "") -> list[dict[str, Any]]:
     """Lists files in the GCS bucket with a specific prefix.
 
     Args:
-        prefix: The folder/prefix to filter by.
+        prefix (str): The folder/prefix to filter by. Defaults to empty string.
 
     Returns:
-        List of dictionaries with name, url, and metadata.
+        list[dict[str, Any]]: List of dictionaries with 'name', 'url', 'size', and 'updated'.
     """
     if not settings.gcs_bucket_name:
         log.warning("gcs_bucket_not_configured")

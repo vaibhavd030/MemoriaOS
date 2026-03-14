@@ -7,11 +7,13 @@ from datetime import date as dt_date
 from datetime import datetime as dt_datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SleepEntry(BaseModel):
-    """A single night of sleep data.
+    """A single night of sleep data."""
+
+    model_config = ConfigDict(slots=True)
 
     Attributes:
         date (dt_date): Calendar date of the sleep.
@@ -131,7 +133,9 @@ class MuscleGroup(enum.StrEnum):
 
 
 class ExerciseEntry(BaseModel):
-    """A single exercise / training session.
+    """A single exercise / training session."""
+
+    model_config = ConfigDict(slots=True)
 
     Attributes:
         date (dt_date): Date of the session.
@@ -165,7 +169,9 @@ class ExerciseEntry(BaseModel):
 
 
 class PracticeBase(BaseModel):
-    """Base for all spiritual practices.
+    """Base for all spiritual practices."""
+
+    model_config = ConfigDict(slots=True)
 
     Attributes:
         date (dt_date): Date of the practice.
@@ -226,6 +232,8 @@ class HabitCategory(enum.StrEnum):
 
 class HabitEntry(BaseModel):
     """A habit event to track."""
+
+    model_config = ConfigDict(slots=True)
 
     date: dt_date
     datetime_logged: dt_datetime | None = None

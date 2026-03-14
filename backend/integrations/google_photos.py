@@ -34,10 +34,13 @@ class GooglePhotosClient:
         """Lists recent media items from the user's library.
 
         Args:
-            page_size: Maximum number of items to return in this call.
+            page_size (int): Maximum number of items to return in this call. Defaults to 10.
 
         Returns:
-            A list of dictionary objects representing media items.
+            list[dict[str, Any]]: A list of dictionary objects representing media items.
+
+        Raises:
+            httpx.HTTPStatusError: If the API request fails.
         """
         response = await self.client.get("/mediaItems", params={"pageSize": page_size})
         response.raise_for_status()
@@ -47,10 +50,13 @@ class GooglePhotosClient:
         """Searches media items using specific filters.
 
         Args:
-            filters: Dictionary containing search criteria (dates, categories).
+            filters (dict[str, Any]): Dictionary containing search criteria (dates, categories).
 
         Returns:
-            A list of dictionary objects representing matching media items.
+            list[dict[str, Any]]: A list of dictionary objects representing matching media items.
+
+        Raises:
+            httpx.HTTPStatusError: If the API request fails.
         """
         response = await self.client.post("/mediaItems:search", json={"filters": filters})
         response.raise_for_status()
@@ -60,10 +66,13 @@ class GooglePhotosClient:
         """Downloads the raw binary content of a media item.
 
         Args:
-            base_url: The baseUrl provided by the Google Photos API.
+            base_url (str): The baseUrl provided by the Google Photos API.
 
         Returns:
-            The raw bytes of the image/video content.
+            bytes: The raw bytes of the image/video content.
+
+        Raises:
+            httpx.HTTPStatusError: If the download fails.
         """
         # baseUrl=d allows downloading the actual data
         async with httpx.AsyncClient() as client:

@@ -1,4 +1,7 @@
-"""Agent for querying past memories and data using SQL."""
+"""Agent for querying past memories and data using SQL.
+
+Leverages BigQuery to perform analytical queries on the user's historical life-logs.
+"""
 
 from google.adk.agents import LlmAgent
 

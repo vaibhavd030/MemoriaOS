@@ -6,7 +6,7 @@ import enum
 from datetime import date as dt_date
 from decimal import Decimal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExpenseCategory(enum.StrEnum):
@@ -36,6 +36,8 @@ class ExpenseRecord(BaseModel):
         reference (str | None): Transaction reference or ID.
         notes (str | None): Additional comments.
     """
+
+    model_config = ConfigDict(slots=True)
 
     vendor: str
     amount: Decimal = Field(description="Transaction amount, e.g. 14.50")

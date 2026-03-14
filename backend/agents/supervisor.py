@@ -1,6 +1,7 @@
 """Supervisor Agent — routes user intent to specialised sub-agents.
 
 This is the root agent of the MemoriaOS multi-agent system.
+It uses intent-based routing to ensure the right model and tools are used for the task.
 """
 
 from google.adk.agents import LlmAgent

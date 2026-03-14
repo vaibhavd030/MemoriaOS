@@ -78,11 +78,12 @@ def _get_notion() -> AsyncClient:
         AsyncClient: The authenticated Notion client.
 
     Raises:
-        RuntimeError: If NOTION_API_KEY is missing.
+        RuntimeError: If NOTION_API_KEY is missing from environment or settings.
     """
     global _notion_client
     if _notion_client is None:
         if not settings.notion_api_key:
+            log.error("notion_api_key_missing")
             raise RuntimeError("NOTION_API_KEY not set")
         _notion_client = AsyncClient(auth=settings.notion_api_key.get_secret_value())
     return _notion_client
@@ -138,7 +139,14 @@ async def _build_sleep(sleep: SleepEntry) -> list[dict[str, Any]]:
 
 
 async def _build_fitness(exercises: list[ExerciseEntry]) -> list[dict[str, Any]]:
-    """Builds Notion blocks for exercise entries."""
+    """Builds Notion blocks for exercise entries.
+
+    Args:
+        exercises (list[ExerciseEntry]): List of exercise structured models.
+
+    Returns:
+        list[dict[str, Any]]: List of Notion blocks.
+    """
     blocks = []
     for ex in exercises:
         text = f"💪 {ex.date}: {ex.exercise_type} "
@@ -221,10 +229,10 @@ async def _build_workouts(workout: WorkoutSplit) -> list[dict[str, Any]]:
 # ── Sync Config ──────────────────────────────────────────────────────
 
 _SYNC_CONFIGS: dict[str, SyncConfig] = {
-    "recipe": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_recipes),
-    "expense": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_expenses),
-    "workout": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_workouts),
-    "task": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_tasks),
+    "recipe": SyncConfig(page_id_attr="notion_recipes_page_id", block_builder=_build_recipes),
+    "expense": SyncConfig(page_id_attr="notion_finance_page_id", block_builder=_build_expenses),
+    "workout": SyncConfig(page_id_attr="notion_fitness_page_id", block_builder=_build_workouts),
+    "task": SyncConfig(page_id_attr="notion_tasks_page_id", block_builder=_build_tasks),
     "sleep": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_sleep),
     "exercise": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_fitness),
     "spiritual": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_spiritual),
