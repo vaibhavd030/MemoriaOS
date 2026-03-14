@@ -2,7 +2,7 @@
 
 import base64
 import json
-from typing import Literal
+from typing import Any, Literal
 
 from google import genai
 from google.genai import types
@@ -10,7 +10,6 @@ from google.genai import types
 from backend.models.finance import ExpenseRecord
 from backend.models.fitness import WorkoutSplit
 from backend.models.recipes import RecipeCard
-
 
 SCHEMA_MAP: dict[str, type] = {
     "recipe": RecipeCard,
@@ -22,15 +21,24 @@ SCHEMA_MAP: dict[str, type] = {
 async def extract_from_screenshot(
     image_base64: str,
     schema_type: Literal["recipe", "expense", "workout", "generic"],
-) -> dict:
-    """Extract structured data from a screenshot using Gemini Vision."""
+) -> dict[str, Any]:
+    """Extracts structured data from a screenshot using Gemini Vision.
+
+    Processes a base64 encoded image and maps it to a specific Pydantic model
+    based on the content type.
+
+    Args:
+        image_base64: Base64 string of the screenshot (PNG).
+        schema_type: The content domain to target for extraction.
+
+    Returns:
+        A dictionary representation of the extracted and validated data.
+    """
     client = genai.Client()
     image_bytes = base64.b64decode(image_base64)
 
     parts = [
-        types.Part.from_image(
-            image=types.Image(image_bytes=image_bytes, mime_type="image/png")
-        ),
+        types.Part.from_image(image=types.Image(image_bytes=image_bytes, mime_type="image/png")),
         types.Part.from_text(
             f"Extract all {schema_type} data from this screenshot. "
             "Ignore UI elements like buttons, comments, navigation bars. "

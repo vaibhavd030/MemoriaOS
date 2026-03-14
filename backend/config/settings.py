@@ -10,6 +10,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Application settings and configuration.
+
+    Loads and validates configuration from environment variables and .env file.
+    All attributes are automatically populated from matching env vars.
+    """
+
     # All application configuration, loaded from .env or environment.
 
     model_config = SettingsConfigDict(
@@ -21,7 +27,7 @@ class Settings(BaseSettings):
 
     # ── Required ──────────────────────────────────────────────────────────
     google_api_key: SecretStr = Field(description="Google AI API Key for Gemini")
-    
+
     # ── Cloud Run / GCP (Core Data) ─────────────────────────────────────────
     gcp_project_id: str = Field(default="my-tele-pa", description="Google Cloud Project ID")
     bq_dataset_id: str = Field(default="memoria_os_prod", description="BigQuery Dataset ID")

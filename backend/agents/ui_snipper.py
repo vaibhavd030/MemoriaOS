@@ -7,7 +7,7 @@ without DOM access or API calls.
 from google.adk.agents import LlmAgent
 
 from backend.tools.extract_structured_data import extract_from_screenshot
-from backend.tools.sync_notion import sync_extraction_to_notion
+from backend.tools.sync_notion import sync_to_notion
 
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -32,6 +32,6 @@ ui_snipper_agent = LlmAgent(
    data to the appropriate Notion database.
 
 5. Return a clean confirmation showing what was extracted.""",
-    description="Extracts structured data from screenshots using Gemini Vision.",
-    tools=[extract_from_screenshot, sync_extraction_to_notion],
+    description="Extracts structured data from images and screenshots using Vision.",
+    tools=[extract_from_screenshot, sync_to_notion],
 )

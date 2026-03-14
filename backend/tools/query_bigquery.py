@@ -16,10 +16,13 @@ from backend.config.settings import settings
 
 log = structlog.get_logger(__name__)
 
+
 class SQLQuery(BaseModel):
     """Generated SQL query with explanation."""
+
     query: str = Field(description="BigQuery Standard SQL SELECT query")
     explanation: str = Field(description="Brief explanation of what the query does")
+
 
 SCHEMA_PROMPT = """
 Table: `{project_id}.{dataset_id}.records`
@@ -37,6 +40,7 @@ Use JSON_EXTRACT_SCALAR(data, '$.field'). Cast before aggregation.
 Filter test data: JSON_EXTRACT_SCALAR(data, '$.is_test') != 'true'
 Today: {today}
 """
+
 
 async def query_past_entries(question: str, user_id: str = "default") -> str:
     """Query historical wellness data using natural language."""
@@ -56,7 +60,11 @@ async def query_past_entries(question: str, user_id: str = "default") -> str:
             contents=[
                 types.Content(
                     role="user",
-                    parts=[types.Part.from_text(f"User ID: '{user_id}'. Generate BigQuery SQL for: {question}")]
+                    parts=[
+                        types.Part.from_text(
+                            f"User ID: '{user_id}'. Generate BigQuery SQL for: {question}"
+                        )
+                    ],
                 )
             ],
             config=types.GenerateContentConfig(
@@ -72,7 +80,7 @@ async def query_past_entries(question: str, user_id: str = "default") -> str:
         if not sql_query.strip().upper().startswith("SELECT"):
             return "Error: Only SELECT queries are permitted."
 
-        def _execute():
+        def _execute() -> list[dict[str, Any]]:
             job_config = bigquery.QueryJobConfig(
                 maximum_bytes_billed=100 * 1024 * 1024  # 100MB safety limit
             )

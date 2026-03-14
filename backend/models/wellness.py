@@ -11,7 +11,18 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SleepEntry(BaseModel):
-    """A single night of sleep data."""
+    """A single night of sleep data.
+
+    Attributes:
+        date (dt_date): Calendar date of the sleep.
+        bedtime_hour (int | None): Hour went to sleep (0-23).
+        bedtime_minute (int | None): Minute went to sleep (0-59).
+        wake_hour (int | None): Hour woke up (0-23).
+        wake_minute (int | None): Minute woke up (0-59).
+        duration_hours (float | None): Total sleep duration.
+        quality (int | None): Quality rating from 1-10.
+        notes (str | None): Additional notes.
+    """
 
     date: dt_date = Field(description="Calendar date of the sleep")
     bedtime_hour: Annotated[int, Field(ge=0, le=23)] | None = Field(
@@ -32,43 +43,69 @@ class SleepEntry(BaseModel):
 
     @model_validator(mode="after")
     def compute_duration(self) -> SleepEntry:
-        # Calculate duration if exact times are given
-        if self.bedtime_hour is not None and self.wake_hour is not None:
-            bed_m = self.bedtime_minute or 0
-            wake_m = self.wake_minute or 0
+        """Computes sleep duration and auto-rates quality.
 
-            bed_total_mins = self.bedtime_hour * 60 + bed_m
-            wake_total_mins = self.wake_hour * 60 + wake_m
+        Returns:
+            SleepEntry: The validated model with computed fields.
+        """
+        # Calculate duration if exact times are given
+        if (
+            self.bedtime_hour is not None
+            and self.wake_hour is not None
+            and self.bedtime_minute is not None
+            and self.wake_minute is not None
+        ):
+
+            bh = self.bedtime_hour
+            bm = self.bedtime_minute
+            wh = self.wake_hour
+            wm = self.wake_minute
+
+            bed_total_mins = bh * 60 + bm
+            wake_total_mins = wh * 60 + wm
 
             if wake_total_mins <= bed_total_mins:
                 wake_total_mins += 24 * 60
 
-            calculated_duration = (wake_total_mins - bed_total_mins) / 60.0
+            calculated_duration = float(wake_total_mins - bed_total_mins) / 60.0
 
             # Use calculated duration if none is explicitly provided, or override
             if self.duration_hours is None:
                 self.duration_hours = round(calculated_duration, 2)
 
         # Auto-calculate excellent quality rating
-        if self.duration_hours is not None and self.bedtime_hour is not None:
-            if self.bedtime_hour <= 22 and self.duration_hours >= 7.5:
-                if self.quality is None:
-                    self.quality = 10
+        if (
+            self.duration_hours is not None
+            and self.bedtime_hour is not None
+            and self.bedtime_hour <= 22
+            and self.duration_hours >= 7.5
+            and self.quality is None
+        ):
+            self.quality = 10
 
         return self
 
     @field_validator("bedtime_hour")
     @classmethod
     def validate_bedtime_is_evening(cls, v: int | None) -> int | None:
-        """Warn if bedtime looks like daytime (potential extraction error)."""
+        """Warns if bedtime looks like daytime (potential extraction error).
+
+        Args:
+            v (int | None): The hour value to validate.
+
+        Returns:
+            int | None: The validated hour value.
+        """
         if v is not None and 9 <= v <= 17:
-            # We'll use standard logging here for now
             import logging
+
             logging.getLogger(__name__).warning(f"Unusual bedtime: {v}")
         return v
 
 
 class ExerciseType(enum.StrEnum):
+    """Supported exercise types for tracking."""
+
     RUN = "run"
     WALK = "walk"
     GYM = "gym"
@@ -80,6 +117,8 @@ class ExerciseType(enum.StrEnum):
 
 
 class MuscleGroup(enum.StrEnum):
+    """Primary muscle groups for targeted workout tracking."""
+
     FULL_BODY = "full_body"
     CHEST = "chest"
     BICEPS = "biceps"
@@ -92,7 +131,17 @@ class MuscleGroup(enum.StrEnum):
 
 
 class ExerciseEntry(BaseModel):
-    """A single exercise / training session."""
+    """A single exercise / training session.
+
+    Attributes:
+        date (dt_date): Date of the session.
+        exercise_type (ExerciseType | None): Type of exercise.
+        body_parts (list[MuscleGroup] | None): Muscle groups trained.
+        duration_minutes (int | None): Duration in minutes.
+        distance_km (float | None): Distance in km.
+        intensity (int | None): Intensity score from 1-10.
+        notes (str | None): Additional notes.
+    """
 
     date: dt_date
     exercise_type: ExerciseType | None = None
@@ -107,13 +156,23 @@ class ExerciseEntry(BaseModel):
     distance_km: Annotated[float, Field(ge=0)] | None = None
     intensity: Annotated[int, Field(ge=1, le=10)] | None = Field(
         default=None,
-        description="Intensity score from 1-10. If the user uses words like 'intense', 'hard', 'tiring', infer a score of 8 or 9.",
+        description=(
+            "Intensity score from 1-10. If the user uses words like "
+            "'intense', 'hard', 'tiring', infer a score of 8 or 9."
+        ),
     )
     notes: str | None = Field(default=None, max_length=500)
 
 
 class PracticeBase(BaseModel):
-    """Base for all spiritual practices."""
+    """Base for all spiritual practices.
+
+    Attributes:
+        date (dt_date): Date of the practice.
+        datetime_logged (dt_datetime | None): Exact time if known.
+        duration_minutes (int | None): Duration in minutes.
+        notes (str | None): Additional notes.
+    """
 
     date: dt_date
     datetime_logged: dt_datetime | None = Field(
@@ -155,6 +214,8 @@ class GroupMeditationEntry(PracticeBase):
 
 
 class HabitCategory(enum.StrEnum):
+    """Categories for tracking daily habits and self-control."""
+
     SELF_CONTROL = "lost_self_control"
     JUNK_FOOD = "junk_food"
     OUTSIDE_FOOD = "outside_food"

@@ -2,22 +2,35 @@
 
 import structlog
 from google.cloud import storage
+
 from backend.config.settings import settings
 
 log = structlog.get_logger(__name__)
 
-async def upload_bytes(data: bytes, filename: str, content_type: str = "application/octet-stream") -> str:
-    """Upload bytes to GCS and return the public URL."""
+
+async def upload_bytes(
+    data: bytes, filename: str, content_type: str = "application/octet-stream"
+) -> str:
+    """Uploads arbitrary bytes to Google Cloud Storage.
+
+    Args:
+        data: The raw byte content to upload.
+        filename: The destination path/name in the bucket.
+        content_type: The MIME type for the uploaded object.
+
+    Returns:
+        The public URL of the uploaded object, or an empty string on failure.
+    """
     if not settings.gcs_bucket_name:
         log.warning("gcs_bucket_not_configured")
         return ""
-    
+
     client = storage.Client(project=settings.gcp_project_id)
     bucket = client.bucket(settings.gcs_bucket_name)
     blob = bucket.blob(filename)
-    
+
     blob.upload_from_string(data, content_type=content_type)
-    
+
     # Return the public URL
     # Note: In production, you might want sign_url or a CDN
     url = f"https://storage.googleapis.com/{settings.gcs_bucket_name}/{filename}"

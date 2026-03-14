@@ -8,7 +8,16 @@ from pydantic import BaseModel, Field
 
 
 class WorkoutExercise(BaseModel):
-    """A single exercise within a workout split."""
+    """A single exercise within a workout split.
+
+    Attributes:
+        name (str): Exercise name.
+        sets (int | None): Number of sets.
+        reps (int | None): Number of repetitions per set.
+        weight_kg (float | None): Weight used in kg.
+        duration_seconds (int | None): Duration if applicable.
+        notes (str | None): Additional comments.
+    """
 
     name: str = Field(description="Exercise name, e.g. 'Bench Press'")
     sets: int | None = Field(default=None, ge=1)
@@ -19,7 +28,16 @@ class WorkoutExercise(BaseModel):
 
 
 class WorkoutSplit(BaseModel):
-    """Workout plan extracted from a screenshot."""
+    """Workout plan extracted from a screenshot.
+
+    Attributes:
+        title (str): Name of the workout.
+        focus_areas (list[str]): Muscle groups targeted.
+        exercises (list[WorkoutExercise]): List of exercises.
+        estimated_duration_minutes (int | None): How long it takes.
+        difficulty (int | None): Difficulty score 1-5.
+        source_url (str | None): Where it was found.
+    """
 
     title: str
     focus_areas: list[str] = Field(

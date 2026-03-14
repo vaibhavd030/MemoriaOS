@@ -23,6 +23,6 @@ STEPS:
 4. COORDINATE with the compile_video tool to create the final MP4 asset.
 
 The narrative should be uplifting and reflective of growth.""",
-    description="Generates weekly video reels and summaries.",
+    description="Orchestrates video synthesis from images, audio, and narratives.",
     tools=[query_past_entries, compile_reel_video],
 )

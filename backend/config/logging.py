@@ -15,6 +15,12 @@ from backend.config.settings import settings
 
 
 def configure_logging() -> None:
+    """Configures structured logging for the application.
+
+    Sets up structlog with JSON rendering for production (Cloud Logging)
+    and colorized console output for development. Also bridges standard
+    library logging to structlog.
+    """
     # Configure structlog processors and stdlib logging bridge.
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
@@ -47,7 +53,7 @@ def configure_logging() -> None:
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, "app.log")
-    
+
     file_handler = RotatingFileHandler(log_file, maxBytes=5_000_000, backupCount=3)
     file_handler.setLevel(logging.DEBUG)
 

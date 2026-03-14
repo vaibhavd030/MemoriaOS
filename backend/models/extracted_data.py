@@ -18,17 +18,41 @@ from backend.models.wellness import (
     SleepEntry,
 )
 
+
 class PhotoAnalysis(BaseModel):
-    """Structured analysis of a Google Photo via Gemini Vision."""
+    """Structured analysis of a Google Photo via Gemini Vision.
+
+    Attributes:
+        timestamp (str): When the photo was taken.
+        location (str | None): Inferred location.
+        activity (str | None): Activity detected in photo.
+        objects (list[str]): List of objects identified.
+        mood (str | None): Emotional tone of the photo.
+        inferred_context (str | None): Narrative context.
+    """
+
     timestamp: str
-    location: str | None = None
-    activity: str | None = None
-    objects: list[str] = Field(default_factory=list)
-    mood: str | None = None
-    inferred_context: str | None = None
+
 
 class ExtractedData(BaseModel):
-    """Container for all data extracted from a single user message or image."""
+    """Container for all data extracted from a single user message or image.
+
+    Attributes:
+        sleep (SleepEntry | None): Extracted sleep data.
+        exercise (list[ExerciseEntry]): Extracted exercises.
+        meditation (list[MeditationEntry]): Meditation sessions.
+        cleaning (list[CleaningEntry]): Cleaning sessions.
+        sitting (list[SittingEntry]): Sitting sessions.
+        group_meditation (list[GroupMeditationEntry]): Group sessions.
+        habits (list[HabitEntry]): Habit events.
+        tasks (list[TaskItem]): New tasks identified.
+        reading_links (list[ReadingLink]): Links to read later.
+        recipe (RecipeCard | None): Full recipe extraction.
+        expense (ExpenseRecord | None): Financial expense record.
+        workout (WorkoutSplit | None): Full workout plan.
+        photos (list[PhotoAnalysis]): Enriched photo data.
+        journal_note (str | None): Accompanying narrative/text.
+    """
 
     # Wellness (Legacy)
     sleep: SleepEntry | None = None

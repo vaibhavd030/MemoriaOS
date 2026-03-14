@@ -4,11 +4,12 @@ This is the root agent of the MemoriaOS multi-agent system.
 """
 
 from google.adk.agents import LlmAgent
-from backend.agents.memory_weaver import memory_weaver_agent
-from backend.agents.ui_snipper import ui_snipper_agent
-from backend.agents.reel_generator import reel_generator_agent
+
 from backend.agents.loop import loop_agent
+from backend.agents.memory_weaver import memory_weaver_agent
 from backend.agents.query_agent import query_agent
+from backend.agents.reel_generator import reel_generator_agent
+from backend.agents.ui_snipper import ui_snipper_agent
 
 GEMINI_MODEL = "gemini-2.5-flash"
 
@@ -27,7 +28,13 @@ ROUTING RULES:
 
 Do NOT try to answer the user directly.""",
     description="Routes user inputs to the appropriate specialist agent.",
-    sub_agents=[ui_snipper_agent, memory_weaver_agent, reel_generator_agent, loop_agent, query_agent],
+    sub_agents=[
+        ui_snipper_agent,
+        memory_weaver_agent,
+        reel_generator_agent,
+        loop_agent,
+        query_agent,
+    ],
 )
 
 root_agent = supervisor_agent

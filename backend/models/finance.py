@@ -24,7 +24,18 @@ class ExpenseCategory(enum.StrEnum):
 
 
 class ExpenseRecord(BaseModel):
-    """Financial transaction extracted from a receipt or bank screenshot."""
+    """Financial transaction extracted from a receipt or bank screenshot.
+
+    Attributes:
+        vendor (str): Name of the vendor/merchant.
+        amount (Decimal): Transaction amount.
+        currency (str): ISO 4217 currency code.
+        date (dt_date): Date of transaction.
+        category (ExpenseCategory): Classification of the expense.
+        payment_method (str | None): How the item was paid for.
+        reference (str | None): Transaction reference or ID.
+        notes (str | None): Additional comments.
+    """
 
     vendor: str
     amount: Decimal = Field(description="Transaction amount, e.g. 14.50")

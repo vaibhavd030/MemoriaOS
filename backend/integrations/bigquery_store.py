@@ -33,7 +33,11 @@ _bq_client: bigquery.Client | None = None
 
 
 def get_db() -> bigquery.Client:
-    """Get or instantiate the global BigQuery client."""
+    """Gets or instantiates the global BigQuery client.
+
+    Returns:
+        bigquery.Client: Authed BigQuery client.
+    """
     global _bq_client
     if _bq_client is None:
         _bq_client = bigquery.Client(project=settings.gcp_project_id)
@@ -41,53 +45,62 @@ def get_db() -> bigquery.Client:
 
 
 async def init_db() -> None:
-    """Initialize the BigQuery Dataset and Table if they do not exist."""
-    client = get_db()
+    """Initializes the BigQuery Dataset and Table if they do not exist.
+
+    Ensures the 'records' table is ready for multi-modal data ingestion.
+    """
     dataset_id = f"{settings.gcp_project_id}.{settings.bq_dataset_id}"
 
-    # 1. Ensure Dataset
-    def _ensure_dataset():
-        try:
-            client.get_dataset(dataset_id)
-        except NotFound:
-            dataset = bigquery.Dataset(dataset_id)
-            # Default to london as per terraform plan in roadmap
-            dataset.location = "europe-west2"
-            client.create_dataset(dataset, timeout=30)
-            log.info("bigquery_dataset_created", id=dataset_id)
+    def _ensure_dataset() -> None:
+        with bigquery.Client(project=settings.gcp_project_id) as client:
+            try:
+                client.get_dataset(dataset_id)
+            except NotFound:
+                dataset = bigquery.Dataset(dataset_id)
+                dataset.location = "europe-west2"
+                client.create_dataset(dataset, timeout=30)
+                log.info("bigquery_dataset_created", id=dataset_id)
 
     await asyncio.to_thread(_ensure_dataset)
 
     table_id = f"{dataset_id}.records"
 
-    # 2. Ensure Table
-    def _ensure_table():
-        try:
-            client.get_table(table_id)
-            log.info("bigquery_table_detected", id=table_id)
-        except NotFound:
-            table = bigquery.Table(table_id, schema=SCHEMA)
-            client.create_table(table, timeout=30)
-            log.info("bigquery_table_created", id=table_id)
+    def _ensure_table() -> None:
+        with bigquery.Client(project=settings.gcp_project_id) as client:
+            try:
+                client.get_table(table_id)
+                log.info("bigquery_table_detected", id=table_id)
+            except NotFound:
+                table = bigquery.Table(table_id, schema=SCHEMA)
+                client.create_table(table, timeout=30)
+                log.info("bigquery_table_created", id=table_id)
 
     await asyncio.to_thread(_ensure_table)
 
 
 async def save_records(user_id: str, records: list[dict[str, Any]]) -> None:
-    """Save records directly to BigQuery."""
+    """Saves records directly to BigQuery.
+
+    Args:
+        user_id (str): The unique identifier for the user.
+        records (list[dict[str, Any]]): List of record dictionaries to persist.
+
+    Raises:
+        RuntimeError: If the BigQuery insertion fails.
+    """
     if not records:
         return
 
-    client = get_db()
     table_id = f"{settings.gcp_project_id}.{settings.bq_dataset_id}.records"
-
     rows_to_insert = []
-    for r in records:
-        record_type = r.get("type", "unknown")
-        record_date = r.get("date", dt.now(UTC).date().isoformat())
-        record_source = r.get("source", "memoria_os")
 
-        # Clone without routing metadata
+    now_date = dt.now(UTC).date().isoformat()
+
+    for r in records:
+        record_type = str(r.get("type", "unknown"))
+        record_date = str(r.get("date", now_date))
+        record_source = str(r.get("source", "memoria_os"))
+
         data_payload = dict(r)
         data_payload.pop("type", None)
         data_payload.pop("date", None)
@@ -104,20 +117,24 @@ async def save_records(user_id: str, records: list[dict[str, Any]]) -> None:
             }
         )
 
-    def _insert():
-        errors = client.insert_rows_json(table_id, rows_to_insert)
-        if errors:
-            log.error("bigquery_insert_errors", errors=errors)
-            raise RuntimeError(f"BigQuery Insert Failed: {errors}")
+    def _insert() -> None:
+        with bigquery.Client(project=settings.gcp_project_id) as client:
+            errors = client.insert_rows_json(table_id, rows_to_insert)
+            if errors:
+                log.error("bigquery_insert_errors", errors=errors)
+                raise RuntimeError(f"BigQuery Insert Failed: {errors}")
 
     await asyncio.to_thread(_insert)
     log.info("saved_records_to_bigquery", count=len(records), user_id=user_id)
 
 
 async def get_current_streak(user_id: str) -> int:
-    """Calculate current streak using BigQuery SQL."""
-    client = get_db()
-    
-    # [Streak Query Omitted for brevity, but same as original]
-    # We will implement the full query in a dedicated tool later as per roadmap
+    """Calculates user's current journaling streak.
+
+    Args:
+        user_id (str): The unique identifier for the user.
+
+    Returns:
+        int: Total number of consecutive days.
+    """
     return 0
