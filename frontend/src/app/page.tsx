@@ -60,7 +60,7 @@ export default function Home() {
 
     source.addEventListener("audio", (e) => {
       const data = JSON.parse(e.data);
-      setStreamingReplies(prev => [...prev, { type: "text", content: `🎵 Audio: ${data.url}` }]); // Placeholder for player
+      setStreamingReplies(prev => [...prev, { type: "audio", content: data.url }]);
     });
 
     source.addEventListener("done", () => {
@@ -167,11 +167,9 @@ export default function Home() {
                     className="glass-card p-4 rounded-2xl"
                   >
                     {part.type === "text" ? (
-                      part.content.startsWith("🎵 Audio:") ? (
-                        <AudioPlayer url={part.content.split(": ")[1]} autoPlay />
-                      ) : (
-                        <p className="text-sm leading-relaxed">{part.content}</p>
-                      )
+                      <p className="text-sm leading-relaxed">{part.content}</p>
+                    ) : part.type === "audio" ? (
+                      <AudioPlayer url={part.content} autoPlay />
                     ) : (
                       <img 
                         src={part.content.startsWith("http") ? part.content : `data:${part.mime_type || "image/png"};base64,${part.content}`} 

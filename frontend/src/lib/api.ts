@@ -5,7 +5,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export interface ChatResponsePart {
-  type: "text" | "image";
+  type: "text" | "image" | "audio";
   content: string;
   mime_type?: string;
 }

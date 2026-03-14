@@ -48,15 +48,23 @@ export default function Reels() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="relative group rounded-[2rem] overflow-hidden aspect-[9/16] max-h-[500px] border border-white/10 glass shadow-2xl hover:border-accent-secondary/50 transition-all cursor-pointer"
+              className="relative group rounded-[2rem] overflow-hidden aspect-[9/16] max-h-[500px] border border-white/10 glass shadow-2xl hover:border-accent-secondary/50 transition-all cursor-pointer bg-black"
             >
+              <video 
+                src={reel.url} 
+                className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                loop
+                muted
+                playsInline
+                onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
+                onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
+              />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/90" />
               
-              {/* This would be a video element in a real app */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 transform transition-all group-hover:scale-110 group-hover:bg-accent-secondary/20">
-                  <Play size={32} fill="currentColor" className="ml-1" />
-                </button>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white border border-white/20">
+                  <Play size={24} fill="currentColor" className="ml-1" />
+                </div>
               </div>
               
               <div className="absolute bottom-8 left-8 right-8 space-y-3">

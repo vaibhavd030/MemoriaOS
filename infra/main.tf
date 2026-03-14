@@ -69,6 +69,13 @@ resource "google_storage_bucket" "media" {
 
   uniform_bucket_level_access = true
 
+  cors {
+    origin          = ["*"]
+    method          = ["GET", "HEAD", "PUT", "POST", "DELETE"]
+    response_header = ["*"]
+    max_age_seconds = 3600
+  }
+
   lifecycle_rule {
     condition {
       age = 90
@@ -158,4 +165,20 @@ resource "google_cloud_scheduler_job" "photo_enrichment" {
     uri         = "${google_cloud_run_v2_service.backend.uri}/api/enrich-photos"
     body        = base64encode("{}")
   }
+}
+
+# ── IAM Public Access ─────────────────────────────────────────────
+
+resource "google_cloud_run_v2_service_iam_member" "backend_public" {
+  name     = google_cloud_run_v2_service.backend.name
+  location = google_cloud_run_v2_service.backend.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "frontend_public" {
+  name     = google_cloud_run_v2_service.frontend.name
+  location = google_cloud_run_v2_service.frontend.location
+  role     = "roles/run.invoker"
+  member   = "allUsers"
 }

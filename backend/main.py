@@ -234,7 +234,10 @@ async def live_session(websocket: WebSocket) -> None:
             api_key=settings.google_api_key.get_secret_value(),
             http_options={"api_version": "v1alpha"},
         )
-        async with genai_client.aio.live.connect(model="gemini-2.5-flash") as session:
+        async with genai_client.aio.live.connect(
+            model="gemini-2.0-flash-exp",
+            config={"response_modalities": ["AUDIO"]}
+        ) as session:
 
             async def send_to_client() -> None:
                 async for message in session:
@@ -250,46 +253,6 @@ async def live_session(websocket: WebSocket) -> None:
         log.error("live_session_error", error=str(e))
     finally:
         await websocket.close()
-
-
-@app.get("/api/reels")
-async def get_reels() -> dict[str, Any]:
-    """Fetches generated reels from Cloud Storage.
-
-    Returns:
-        dict[str, Any]: List of reels metadata.
-    """
-    return {"reels": [], "status": "success"}
-
-
-@app.post("/api/generate-reel")
-async def generate_reel() -> dict[str, str]:
-    """Triggers reel generation process.
-
-    Returns:
-        dict[str, str]: Acknowledgement message.
-    """
-    return {"message": "Reel generation started", "status": "success"}
-
-
-@app.get("/api/photos/connect")
-async def photos_connect() -> dict[str, str]:
-    """Initiates Google Photos OAuth flow.
-
-    Returns:
-        dict[str, str]: Authentication URL.
-    """
-    return {"auth_url": "https://accounts.google.com/o/oauth2/v2/auth?...", "status": "success"}
-
-
-@app.post("/api/enrich-photos")
-async def enrich_photos() -> dict[str, str]:
-    """Triggers photo enrichment pipeline.
-
-    Returns:
-        dict[str, str]: Acknowledgement message.
-    """
-    return {"message": "Photo enrichment started", "status": "success"}
 
 
 if __name__ == "__main__":

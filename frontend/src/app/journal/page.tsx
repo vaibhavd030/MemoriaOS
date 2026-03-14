@@ -1,7 +1,10 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Plus, Search, Calendar, Clock } from "lucide-react";
 import { getJournalRecords } from "@/lib/api";
+import { motion } from "framer-motion";
 
 export default function Journal() {
   const [records, setRecords] = useState<any[]>([]);
@@ -80,6 +83,3 @@ export default function Journal() {
     </>
   );
 }
-
-// Added motion import for animations
-import { motion } from "framer-motion";

@@ -35,7 +35,16 @@ narrative_generator = LlmAgent(
     description="Generates a first-person reflective narrative with embedded visual analysis.",
 )
 
-# Step 3: Generate ambient audio summary
+# Step 3: Extract structured data
+extractor = LlmAgent(
+    name="Extractor",
+    model=GEMINI_MODEL,
+    instruction=load_prompt("extract"),
+    output_key="extraction_data",
+    description="Extracts structured life-logging entities from the user input and narrative.",
+)
+
+# Step 4: Generate ambient audio summary
 audio_generator = LlmAgent(
     name="AudioGenerator",
     model=GEMINI_MODEL,
@@ -46,7 +55,7 @@ audio_generator = LlmAgent(
     description="Synthesizes a short audio summary of the extracted narrative.",
 )
 
-# Step 4: Persist the memory and extraction
+# Step 5: Persist the memory and extraction
 persister = LlmAgent(
     name="Persister",
     model=GEMINI_MODEL,
@@ -60,6 +69,6 @@ persister = LlmAgent(
 # The Sequential Memory Weaver Agent
 memory_weaver_agent = SequentialAgent(
     name="MemoryWeaverAgent",
-    sub_agents=[context_retriever, narrative_generator, audio_generator, persister],
-    description="Weaves memories sequentially: Retrieval -> Narrative -> Audio -> Persistence.",
+    sub_agents=[context_retriever, narrative_generator, extractor, audio_generator, persister],
+    description="Weaves memories sequentially: Retrieval -> Narrative -> Extraction -> Audio -> Persistence.",
 )

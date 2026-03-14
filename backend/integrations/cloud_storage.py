@@ -1,6 +1,7 @@
 """Google Cloud Storage integration for MemoriaOS."""
 
 import asyncio
+from typing import Any
 
 import structlog
 from google.cloud import storage
