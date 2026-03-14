@@ -134,6 +134,14 @@ resource "google_cloud_run_v2_service" "backend" {
   }
 }
 
+# ── Storage Public Access ─────────────────────────────────────────
+
+resource "google_storage_bucket_iam_member" "public_viewer" {
+  bucket = google_storage_bucket.media.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
 # ── Cloud Run Frontend ────────────────────────────────────────────
 
 resource "google_cloud_run_v2_service" "frontend" {

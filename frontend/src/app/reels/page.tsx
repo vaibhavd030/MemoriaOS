@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Play, Film, AlertCircle } from "lucide-react";
