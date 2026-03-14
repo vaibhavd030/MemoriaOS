@@ -31,7 +31,12 @@ class PhotoAnalysis(BaseModel):
         inferred_context (str | None): Narrative context.
     """
 
-    timestamp: str
+    timestamp: str = Field(default="Unknown", description="When the photo was taken")
+    location: str | None = Field(default=None, description="Inferred location from visual cues")
+    activity: str | None = Field(default=None, description="Activity depicted")
+    objects: list[str] = Field(default_factory=list, description="Objects identified")
+    mood: str | None = Field(default=None, description="Emotional tone")
+    inferred_context: str | None = Field(default=None, description="Narrative context")
 
 
 class ExtractedData(BaseModel):

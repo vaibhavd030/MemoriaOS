@@ -128,6 +128,54 @@ async def save_records(user_id: str, records: list[dict[str, Any]]) -> None:
     log.info("saved_records_to_bigquery", count=len(records), user_id=user_id)
 
 
+async def get_recent_records(user_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Fetches recent records for the user from BigQuery.
+
+    Args:
+        user_id (str): The unique identifier for the user.
+        limit (int): Max number of records to return.
+
+    Returns:
+        list[dict[str, Any]]: List of parsed record dictionaries.
+    """
+    table_id = f"{settings.gcp_project_id}.{settings.bq_dataset_id}.records"
+    query = f"""
+        SELECT date, type, data, source
+        FROM `{table_id}`
+        WHERE user_id = @user_id
+        ORDER BY date DESC, id DESC
+        LIMIT @limit
+    """
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("limit", "INTEGER", limit),
+        ]
+    )
+
+    def _query() -> list[dict[str, Any]]:
+        with bigquery.Client(project=settings.gcp_project_id) as client:
+            query_job = client.query(query, job_config=job_config)
+            results = query_job.result()
+            records = []
+            for row in results:
+                record = {
+                    "date": str(row.date),
+                    "type": row.type,
+                    "source": row.source,
+                }
+                # Unpack JSON data
+                try:
+                    data = json.loads(row.data)
+                    record.update(data)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+                records.append(record)
+            return records
+
+    return await asyncio.to_thread(_query)
+
+
 async def get_current_streak(user_id: str) -> int:
     """Calculates user's current journaling streak.
 

@@ -2,9 +2,11 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Zap, Send, Camera, X } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Navigation from "@/components/Navigation";
-import { sendChatMessage, ChatResponsePart } from "@/lib/api";
+import AudioPlayer from "@/components/AudioPlayer";
+import WaveformVisualizer from "@/components/WaveformVisualizer";
+import { sendChatMessage, streamChatMessage, ChatResponsePart } from "@/lib/api";
 
 export default function Home() {
   const [message, setMessage] = useState("");
@@ -13,11 +15,22 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [streamingReplies, setStreamingReplies] = useState<ChatResponsePart[]>([]);
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
   const handleSend = async () => {
     if (!message && !selectedImage) return;
+    
+    // If no image, use cinematic streaming
+    if (!selectedImage) {
+      handleStreamingSend();
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const res = await sendChatMessage(message, selectedImage || undefined);
+      const res = await sendChatMessage(message, selectedImage);
       setReplies(res.response);
       setMessage("");
       setSelectedImage(null);
@@ -25,6 +38,56 @@ export default function Home() {
       console.error(err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStreamingSend = () => {
+    setReplies([]);
+    setStreamingReplies([]);
+    setIsLoading(true);
+    
+    const source = streamChatMessage(message);
+    
+    source.addEventListener("text", (e) => {
+      const data = JSON.parse(e.data);
+      setStreamingReplies(prev => [...prev, { type: "text", content: data.content }]);
+    });
+
+    source.addEventListener("image", (e) => {
+      const data = JSON.parse(e.data);
+      setStreamingReplies(prev => [...prev, { type: "image", content: data.content, mime_type: data.mime_type }]);
+    });
+
+    source.addEventListener("audio", (e) => {
+      const data = JSON.parse(e.data);
+      setStreamingReplies(prev => [...prev, { type: "text", content: `🎵 Audio: ${data.url}` }]); // Placeholder for player
+    });
+
+    source.addEventListener("done", () => {
+      source.close();
+      setIsLoading(false);
+      setMessage("");
+    });
+
+    source.onerror = () => {
+      source.close();
+      setIsLoading(false);
+    };
+  };
+
+  const toggleMic = async () => {
+    if (isRecording) {
+      setIsRecording(false);
+      audioStream?.getTracks().forEach(t => t.stop());
+      setAudioStream(null);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setAudioStream(stream);
+        setIsRecording(true);
+      } catch (err) {
+        console.error("Mic access denied:", err);
+      }
     }
   };
 
@@ -71,11 +134,17 @@ export default function Home() {
                     />
                   ))}
                   <motion.button 
-                    className="w-32 h-32 rounded-full glass flex items-center justify-center relative z-10"
+                    onClick={toggleMic}
+                    className={`w-32 h-32 rounded-full glass flex items-center justify-center relative z-10 transition-all ${isRecording ? 'border-accent-primary scale-110 shadow-[0_0_30px_rgba(0,242,255,0.3)]' : ''}`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Mic size={40} className="text-accent-primary" />
+                    <Mic size={40} className={isRecording ? "text-accent-vibrant animate-pulse" : "text-accent-primary"} />
+                    {isRecording && (
+                      <div className="absolute -bottom-8">
+                        <WaveformVisualizer stream={audioStream} isActive={isRecording} />
+                      </div>
+                    )}
                   </motion.button>
                 </div>
                 <div className="text-center space-y-2">
@@ -90,25 +159,36 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col gap-4 p-4"
               >
-                {replies.map((part, idx) => (
-                  <div key={idx} className="glass-card p-4 rounded-2xl">
+                {(streamingReplies.length > 0 ? streamingReplies : replies).map((part, idx) => (
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-card p-4 rounded-2xl"
+                  >
                     {part.type === "text" ? (
-                      <p className="text-sm leading-relaxed">{part.content}</p>
+                      part.content.startsWith("🎵 Audio:") ? (
+                        <AudioPlayer url={part.content.split(": ")[1]} autoPlay />
+                      ) : (
+                        <p className="text-sm leading-relaxed">{part.content}</p>
+                      )
                     ) : (
                       <img 
-                        src={`data:${part.mime_type || "image/png"};base64,${part.content}`} 
+                        src={part.content.startsWith("http") ? part.content : `data:${part.mime_type || "image/png"};base64,${part.content}`} 
                         alt="AI Response" 
                         className="rounded-lg max-w-full"
                       />
                     )}
-                  </div>
+                  </motion.div>
                 ))}
-                <button 
-                  onClick={() => setReplies([])}
-                  className="text-xs text-accent-primary font-bold uppercase tracking-widest mt-4 self-center"
-                >
-                  New Memory
-                </button>
+                {!isLoading && (
+                  <button 
+                    onClick={() => { setReplies([]); setStreamingReplies([]); }}
+                    className="text-xs text-accent-primary font-bold uppercase tracking-widest mt-4 self-center"
+                  >
+                    New Memory
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

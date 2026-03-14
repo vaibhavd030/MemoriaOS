@@ -17,6 +17,15 @@ from backend.models.finance import ExpenseRecord
 from backend.models.fitness import WorkoutSplit
 from backend.models.recipes import RecipeCard
 from backend.models.tasks import TaskItem
+from backend.models.wellness import (
+    CleaningEntry,
+    ExerciseEntry,
+    GroupMeditationEntry,
+    HabitEntry,
+    MeditationEntry,
+    SittingEntry,
+    SleepEntry,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -111,7 +120,59 @@ class SyncConfig:
 
 async def _build_tasks(tasks: list[TaskItem]) -> list[dict[str, Any]]:
     """Builds Notion blocks for task items."""
-    return []
+    blocks = []
+    for task in tasks:
+        blocks.append(_bullet_block(f"☐ {task.title}"))
+    return blocks
+
+
+async def _build_sleep(sleep: SleepEntry) -> list[dict[str, Any]]:
+    """Builds Notion blocks for sleep data."""
+    text = (
+        f"😴 {sleep.date}: {sleep.duration_hours}h "
+        f"(Quality: {sleep.quality or 'N/A'}/10)"
+    )
+    if sleep.notes:
+        text += f" - {sleep.notes}"
+    return [_bullet_block(text)]
+
+
+async def _build_fitness(exercises: list[ExerciseEntry]) -> list[dict[str, Any]]:
+    """Builds Notion blocks for exercise entries."""
+    blocks = []
+    for ex in exercises:
+        text = f"💪 {ex.date}: {ex.exercise_type} "
+        if ex.duration_minutes:
+            text += f"({ex.duration_minutes}m) "
+        if ex.intensity:
+            text += f"[Intensity: {ex.intensity}]"
+        blocks.append(_bullet_block(text))
+    return blocks
+
+
+async def _build_spiritual(practices: list[Any]) -> list[dict[str, Any]]:
+    """Builds Notion blocks for spiritual practices."""
+    blocks = []
+    for p in practices:
+        emoji = "🧘"
+        if isinstance(p, CleaningEntry): emoji = "✨"
+        elif isinstance(p, SittingEntry): emoji = "🪑"
+        elif isinstance(p, GroupMeditationEntry): emoji = "👥"
+        
+        text = f"{emoji} {p.date}: {type(p).__name__}"
+        if p.duration_minutes:
+            text += f" ({p.duration_minutes}m)"
+        blocks.append(_bullet_block(text))
+    return blocks
+
+
+async def _build_habits(habits: list[HabitEntry]) -> list[dict[str, Any]]:
+    """Builds Notion blocks for habit tracking."""
+    blocks = []
+    for h in habits:
+        text = f"📉 {h.date}: {h.category} - {h.description}"
+        blocks.append(_bullet_block(text))
+    return blocks
 
 
 async def _build_recipes(recipe: RecipeCard) -> list[dict[str, Any]]:
@@ -163,6 +224,11 @@ _SYNC_CONFIGS: dict[str, SyncConfig] = {
     "recipe": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_recipes),
     "expense": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_expenses),
     "workout": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_workouts),
+    "task": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_tasks),
+    "sleep": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_sleep),
+    "exercise": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_fitness),
+    "spiritual": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_spiritual),
+    "habit": SyncConfig(page_id_attr="notion_wellness_page_id", block_builder=_build_habits),
 }
 
 
@@ -190,6 +256,16 @@ async def sync_extraction_to_notion(data: Any) -> bool:
             config = _SYNC_CONFIGS["expense"]
         elif isinstance(data_item, WorkoutSplit):
             config = _SYNC_CONFIGS["workout"]
+        elif isinstance(data_item, TaskItem):
+            config = _SYNC_CONFIGS["task"]
+        elif isinstance(data_item, SleepEntry):
+            config = _SYNC_CONFIGS["sleep"]
+        elif isinstance(data_item, ExerciseEntry):
+            config = _SYNC_CONFIGS["exercise"]
+        elif isinstance(data_item, (MeditationEntry, CleaningEntry, SittingEntry, GroupMeditationEntry)):
+            config = _SYNC_CONFIGS["spiritual"]
+        elif isinstance(data_item, HabitEntry):
+            config = _SYNC_CONFIGS["habit"]
 
         if not config:
             log.warning("no_sync_config_found", type=type(data_item))
@@ -200,7 +276,7 @@ async def sync_extraction_to_notion(data: Any) -> bool:
             log.error("target_page_id_not_set", attr=config.page_id_attr)
             return False
 
-        blocks = await config.block_builder(data_item)
+        blocks = await config.block_builder(data if is_list else data_item)
         await _append_blocks(notion, target_page_id, blocks)
         log.info("sync_to_notion_success", type=type(data_item))
         return True

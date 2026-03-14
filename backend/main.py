@@ -2,10 +2,12 @@
 
 import asyncio
 import base64
+import json
 from typing import Any
 
 import structlog
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket
+from fastapi.responses import StreamingResponse
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import Client, types
@@ -13,6 +15,8 @@ from google.genai import Client, types
 from backend.agents.supervisor import root_agent
 from backend.config.logging import configure_logging
 from backend.config.settings import settings
+from backend.integrations.bigquery_store import get_recent_records
+from backend.integrations.cloud_storage import list_files
 
 # Initialize logging
 configure_logging()
@@ -115,6 +119,105 @@ async def chat(
         raise HTTPException(
             status_code=500, detail="Internal server error during chat processing"
         ) from e
+
+
+@app.get("/api/chat/stream")
+async def chat_stream(
+    message: str,
+    user_id: str = "default",
+    session_id: str = "default_session",
+) -> StreamingResponse:
+    """Streams agent responses via SSE for a cinematic modal reveal.
+
+    Events:
+    - text: Narrative content chunks.
+    - image: Base64 or GCS URL of generated imagery.
+    - audio: GCS URL of synthesized narrative audio.
+    - done: Final completion signal.
+    """
+
+    async def event_generator():
+        try:
+            await session_service.get_or_create_session(
+                app_name="memoria_os",
+                user_id=user_id,
+                session_id=session_id,
+            )
+
+            content = types.Content(role="user", parts=[types.Part.from_text(message)])
+
+            async for event in runner.run_async(
+                user_id=user_id, session_id=session_id, new_message=content
+            ):
+                # Inspect parts for text, images, or tools producing media
+                if event.content:
+                    for part in event.content.parts:
+                        if part.text:
+                            yield f"event: text\ndata: {json.dumps({'content': part.text})}\n\n"
+                        elif part.inline_data:
+                            img_data = base64.b64encode(part.inline_data.data).decode()
+                            yield f"event: image\ndata: {json.dumps({'content': img_data, 'mime_type': part.inline_data.mime_type})}\n\n"
+
+                # Check if this event contains tool outputs (like audio URL)
+                # Note: In ADK, tool outputs often appear in the conversation history or specific event fields
+                # We'll specifically look for .mp3 URLs in text as a fallback if not structured
+                if event.content:
+                    for part in event.content.parts:
+                        if part.text and (".mp3" in part.text or "https://storage.googleapis.com" in part.text):
+                            if "audio" in part.text.lower() or "reel" in part.text.lower():
+                                yield f"event: audio\ndata: {json.dumps({'url': part.text.strip()})}\n\n"
+
+            yield "event: done\ndata: {}\n\n"
+
+        except Exception as e:
+            log.error("stream_error", error=str(e))
+            yield f"event: error\ndata: {json.dumps({'detail': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.get("/api/journal")
+async def get_journal(user_id: str = "default", limit: int = 50):
+    """Fetches recent journal records for the UI."""
+    try:
+        records = await get_recent_records(user_id=user_id, limit=limit)
+        return {"records": records, "status": "success"}
+    except Exception as e:
+        log.error("journal_fetch_error", error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to fetch journal records")
+
+
+@app.get("/api/reels")
+async def get_reels():
+    """Fetches list of generated reels from GCS."""
+    try:
+        files = await list_files(prefix="reels/")
+        # Filter for video files
+        reels = [f for f in files if f["name"].lower().split('.')[-1] in ('mp4', 'mkv', 'mov')]
+        return {"reels": reels, "status": "success"}
+    except Exception as e:
+        log.error("reels_fetch_error", error=str(e))
+        return {"reels": [], "status": "error", "message": str(e)}
+
+
+@app.get("/api/vault")
+async def get_vault():
+    """Fetches media and structured data summary for the vault."""
+    try:
+        # For now, let's just list photos
+        photos = await list_files(prefix="photos/")
+        return {
+            "media": photos,
+            "counts": {
+                "media": len(photos),
+                "documents": 0,
+                "data": 0
+            },
+            "status": "success"
+        }
+    except Exception as e:
+        log.error("vault_fetch_error", error=str(e))
+        return {"status": "error", "message": str(e)}
 
 
 @app.websocket("/api/live")

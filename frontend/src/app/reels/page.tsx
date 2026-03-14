@@ -1,33 +1,75 @@
-"use client";
-
+import { useState, useEffect } from "react";
 import Navigation from "@/components/Navigation";
-import { Play } from "lucide-react";
+import { Play, Film, AlertCircle } from "lucide-react";
+import { getReels } from "@/lib/api";
+import { motion } from "framer-motion";
 
 export default function Reels() {
+  const [reels, setReels] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getReels();
+        setReels(data.reels || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
   return (
     <>
       <main className="main-content animate-fade space-y-8">
-        <header>
-          <h1 className="text-3xl font-bold tracking-tight">Memory Reels</h1>
-          <p className="text-text-secondary text-sm">Your week in motion</p>
+        <header className="px-4 pt-4">
+          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-white/40 bg-clip-text text-transparent italic">
+            Memory Reels
+          </h1>
+          <p className="text-text-secondary text-xs uppercase tracking-widest mt-1 opacity-60">Your week in motion</p>
         </header>
 
-        <section className="grid grid-cols-1 gap-6">
-          <div className="relative group rounded-3xl overflow-hidden aspect-[9/16] max-h-[500px] border border-white/10 glass shadow-2xl">
-            {/* Simulated Video Thumbnail */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/80" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <button className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 transform transition-transform group-hover:scale-110">
-                <Play size={32} fill="white" />
-              </button>
+        <section className="grid grid-cols-1 gap-6 px-4 pb-24">
+          {loading ? (
+             <div className="flex justify-center py-20">
+                <div className="w-8 h-8 border-2 border-accent-secondary/30 border-t-accent-secondary rounded-full animate-spin" />
+             </div>
+          ) : reels.length === 0 ? (
+            <div className="text-center py-20 opacity-30">
+              <Film size={48} className="mx-auto mb-4 stroke-1" />
+              <p className="text-sm italic">No cinematic reels generated yet.</p>
             </div>
-            
-            <div className="absolute bottom-6 left-6 right-6 space-y-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-primary">Weekly Retrospective</span>
-              <h3 className="text-xl font-semibold">The Week of Growth</h3>
-              <p className="text-xs text-white/60">March 6 - March 13 • 45s</p>
-            </div>
-          </div>
+          ) : reels.map((reel, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.1 }}
+              className="relative group rounded-[2rem] overflow-hidden aspect-[9/16] max-h-[500px] border border-white/10 glass shadow-2xl hover:border-accent-secondary/50 transition-all cursor-pointer"
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/90" />
+              
+              {/* This would be a video element in a real app */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl flex items-center justify-center text-white border border-white/20 transform transition-all group-hover:scale-110 group-hover:bg-accent-secondary/20">
+                  <Play size={32} fill="currentColor" className="ml-1" />
+                </button>
+              </div>
+              
+              <div className="absolute bottom-8 left-8 right-8 space-y-3">
+                <span className="inline-block px-3 py-1 rounded-full bg-accent-secondary/20 border border-accent-secondary/30 text-[8px] font-bold uppercase tracking-[0.2em] text-accent-secondary backdrop-blur-md">
+                  Weekly Highlight
+                </span>
+                <h3 className="text-2xl font-bold tracking-tight">{reel.name.split('/').pop()}</h3>
+                <p className="text-[10px] text-white/50 tracking-wide">
+                  {new Date(reel.updated).toLocaleDateString()} • {(reel.size / 1024 / 1024).toFixed(1)}MB
+                </p>
+              </div>
+            </motion.div>
+          ))}
         </section>
       </main>
       <Navigation />

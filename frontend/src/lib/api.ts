@@ -46,18 +46,6 @@ export async function sendChatMessage(
   return response.json();
 }
 
-/**
- * Fetches generated reels from the backend.
- */
-export async function getReels() {
-  const response = await fetch(`${API_BASE_URL}/api/reels`);
-  if (!response.ok) throw new Error("Failed to fetch reels");
-  return response.json();
-}
-
-/**
- * Initiates the Google Photos connection flow.
- */
 export async function connectPhotos() {
   const response = await fetch(`${API_BASE_URL}/api/photos/connect`);
   if (!response.ok) throw new Error("Failed to connect photos");
@@ -70,4 +58,51 @@ export async function connectPhotos() {
 export function createLiveSession() {
   const wsUrl = API_BASE_URL.replace(/^http/, "ws") + "/api/live";
   return new WebSocket(wsUrl);
+}
+
+/**
+ * Streams chat responses via SSE for cinematic reveal.
+ */
+export function streamChatMessage(
+  message: string,
+  userId: string = "default",
+  sessionId: string = "default_session"
+) {
+  const url = new URL(`${API_BASE_URL}/api/chat/stream`);
+  url.searchParams.append("message", message);
+  url.searchParams.append("user_id", userId);
+  url.searchParams.append("session_id", sessionId);
+
+  return new EventSource(url.toString());
+}
+
+/**
+ * Fetches recent journal records from the backend.
+ */
+export async function getJournalRecords(userId: string = "default", limit: number = 50) {
+  const url = new URL(`${API_BASE_URL}/api/journal`);
+  url.searchParams.append("user_id", userId);
+  url.searchParams.append("limit", limit.toString());
+
+  const response = await fetch(url.toString());
+  if (!response.ok) throw new Error("Failed to fetch journal records");
+  return response.json();
+}
+
+/**
+ * Fetches generated reels from the backend.
+ */
+export async function getReels() {
+  const response = await fetch(`${API_BASE_URL}/api/reels`);
+  if (!response.ok) throw new Error("Failed to fetch reels");
+  return response.json();
+}
+
+/**
+ * Fetches vault data (media and structured counts).
+ */
+export async function getVault() {
+  const response = await fetch(`${API_BASE_URL}/api/vault`);
+  if (!response.ok) throw new Error("Failed to fetch vault data");
+  return response.json();
 }

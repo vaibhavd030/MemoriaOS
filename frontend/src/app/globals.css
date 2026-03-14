@@ -63,12 +63,19 @@ body {
 
 /* Layout */
 .app-container {
-  max-width: 480px; /* Mobile first / PWA width */
+  max-width: 1200px; /* Wider for desktop */
   margin: 0 auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  background: var(--bg-deep);
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    max-width: 480px;
+  }
 }
 
 .main-content {

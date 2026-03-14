@@ -24,7 +24,7 @@ async def fetch_and_analyze_recent_photos(access_token: str, limit: int = 3) -> 
         A list of analyzed photo records.
     """
     gp_client = GooglePhotosClient(access_token)
-    genai_client = Client(api_key=settings.google_api_key)
+    genai_client = Client(api_key=settings.google_api_key.get_secret_value())
 
     try:
         log.info("fetching_recent_photos", limit=limit)
@@ -50,8 +50,8 @@ async def fetch_and_analyze_recent_photos(access_token: str, limit: int = 3) -> 
             Identify the location, activity, objects, mood, and any inferred context.
             Return the result as a structured PhotoAnalysis object."""
 
-            # Call Gemini Vision
-            response = genai_client.models.generate_content(
+            # Call Gemini Vision asynchronously
+            response = await genai_client.aio.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=[prompt, types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")],
                 config=types.GenerateContentConfig(
@@ -61,11 +61,12 @@ async def fetch_and_analyze_recent_photos(access_token: str, limit: int = 3) -> 
             )
 
             if response.parsed:
-                analysis: PhotoAnalysis = response.parsed
-                # Add timestamp from Google Photos metadata if available
+                # Merge parsed data with timestamp from Google Photos metadata
                 p_metadata = item.get("mediaMetadata", {})
-                analysis.timestamp = p_metadata.get("creationTime", "Unknown")
-                analyses.append(analysis)
+                analysis_dict = response.parsed.model_dump()
+                analysis_dict["timestamp"] = p_metadata.get("creationTime", "Unknown")
+
+                analyses.append(PhotoAnalysis.model_validate(analysis_dict))
 
         return analyses
 

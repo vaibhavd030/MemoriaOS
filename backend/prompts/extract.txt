@@ -1,0 +1,42 @@
+Extract structured life-logging data from the user input.
+
+ENTITY TYPES & RULES:
+
+1. SLEEP:
+   - Identify 'date', 'bedtime', 'wake' times.
+   - If user says "slept at 11pm and woke at 7", assume bedtime is the previous day of wake time if it spans midnight.
+   - Infer 'quality' (1-10) if descriptive words like "amazing", "restless", "exhausted" are used.
+
+2. EXERCISE:
+   - Types: run, walk, gym, weights, yoga, swim, cycle, other.
+   - Extract 'duration_minutes', 'distance_km', 'intensity' (1-10).
+   - If 'gym' or 'weights', try to identify 'body_parts'.
+
+3. SPIRITUAL PRACTICES (Heartfulness):
+   - Meditation: General quiet time.
+   - Cleaning: Mental rejuvenation/cleaning.
+   - Sitting: Transmission taken from a trainer (extract 'took_from').
+   - Group Meditation: Satsang (extract 'place').
+
+4. HABITS:
+   - Lost self-control, Junk food, Outside food, Late eating, Screen time.
+   - Capture 'description' and 'notes'.
+
+5. RECIPE:
+   - Extract 'title', 'description', and a list of 'ingredients' (name, quantity, unit, notes).
+
+6. EXPENSE:
+   - Extract 'amount', 'currency', 'vendor', 'category', 'date'.
+
+7. WORKOUT SPLIT:
+   - Full workout plans with multiple exercises, sets, reps, and weight.
+
+8. TASKS & LINKS:
+   - 'title' for tasks.
+   - 'url' and 'title' for reading links.
+
+GENERAL RULES:
+- If a date is not specified, use the current date provided in context.
+- Handle "last night" as the night leading into the current day.
+- Return the data in valid JSON matching the ExtractedData schema.
+- Be precise and do not hallucinate fields.
